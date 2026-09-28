@@ -18,16 +18,26 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.unir.appcamil.room.AppDatabase;
+import com.unir.appcamil.room.Review;
+import com.unir.appcamil.room.ReviewDAO;
+
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     private EditText editTitle;
     private EditText editReview;
     private Button btnAdd;
+    private Button btnDelete;
     private Spinner spinner;
     private TextView relatorio;
     private RatingBar ratingBar;
+    private AppDatabase db;
+    private ReviewDAO dao;
+    private List<Review> listaReviews;
+    private Review reviewAtual = new Review();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,32 +49,50 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
+        db = AppDatabase.obterInstancia(this);
+        dao = db.reviewDAO();
+        listaReviews = dao.obterTodas();
+
         editTitle = findViewById(R.id.editTitle);
         editReview = findViewById(R.id.editReview);
         ratingBar = findViewById(R.id.ratingBar);
         btnAdd = findViewById(R.id.btnAdd);
+        btnDelete = findViewById(R.id.buttonDelete);
         relatorio = findViewById(R.id.textViewRelatorio);
         spinner = findViewById(R.id.spinner);
 
-
-        ArrayList<String> avaliacoes = new ArrayList<>();
-        avaliacoes.add("");
-        ArrayList<Double> numstars = new ArrayList<>();
-        numstars.add(0.0);
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item);
-        adapter.add("Ver avaliados");
-
+        ArrayList<String> titles = new ArrayList<>();
+        titles.add("Ver avaliados");
+        for(Review r : listaReviews){
+            titles.add(r.titulo);
+        }
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, titles);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) ;
         spinner.setAdapter(adapter);
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 if(i != 0) {
-                    relatorio.setText("Nota: " + numstars.get(i) + "\n\nReview: " + avaliacoes.get(i));
+                    reviewAtual = listaReviews.get(i - 1);
+                    relatorio.setText("Nota: " + reviewAtual.nota + "\n\nReview: " + reviewAtual.review);
+                    btnDelete.setVisibility(com.google.android.material.R.id.visible);
+                }else{
+                    btnDelete.setVisibility(com.google.android.material.R.id.gone);
                 }
             }
             @Override
             public void onNothingSelected(AdapterView<?> adapterView) {
+            }
+        });
+        btnDelete.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dao.deletar(reviewAtual);
+                listaReviews.remove(reviewAtual);
+                adapter.remove(reviewAtual.titulo);
+                adapter.notifyDataSetChanged();
+                spinner.setSelection(0);
+                relatorio.setText("");
             }
         });
 
@@ -73,10 +101,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 String title = editTitle.getText().toString();
-                String review = editReview.getText().toString();
+                String desc = editReview.getText().toString();
                 float stars = ratingBar.getRating();
 
-                if(title.isEmpty() || review.isEmpty() || stars == 0){
+                if(title.isEmpty() || desc.isEmpty() || stars == 0){
                     AlertDialog.Builder builder = new AlertDialog.Builder(view.getContext());
                     builder.setMessage("Preencha todos os campos!");
                     builder.setCancelable(false);
@@ -99,9 +127,15 @@ public class MainActivity extends AppCompatActivity {
                 });
                 builder.show();
 
-                avaliacoes.add(review);
-                numstars.add(Double.valueOf(stars));
                 adapter.add(title);
+
+                Review review = new Review();
+                review.titulo = title;
+                review.nota = stars;
+                review.review = desc;
+                dao.inserir(review);
+                listaReviews.add(review);
+
                 clean();
             }
         });

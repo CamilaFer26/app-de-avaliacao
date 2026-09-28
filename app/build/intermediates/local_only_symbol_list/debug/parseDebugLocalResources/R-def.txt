@@ -1,0 +1,32 @@
+R_DEF: Internal format may change without notice
+local
+color black
+color dark_gray
+color green_100
+color green_200
+color green_300
+color green_500
+color red_error
+color white
+drawable ic_launcher_background
+drawable ic_launcher_foreground
+drawable rating
+drawable star
+id btnAdd
+id buttonDelete
+id editReview
+id editTitle
+id imageView
+id main
+id ratingBar
+id spinner
+id textView
+id textViewRelatorio
+layout activity_main
+mipmap ic_launcher
+mipmap ic_launcher_round
+string app_name
+style Base.Theme.MyApplication
+style Theme.MyApplication
+xml backup_rules
+xml data_extraction_rules
